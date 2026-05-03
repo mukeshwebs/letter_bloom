@@ -286,6 +286,57 @@ class _GameScreenState extends State<GameScreen> {
     state.addListener(_onStateChanged);
   }
 
+  Future<void> _confirmReveal(GameState s) async {
+    if (s.revealsUsed >= GameState.maxReveals) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          duration: Duration(seconds: 2),
+          content: Text('Reveal already used for this puzzle.'),
+        ),
+      );
+      return;
+    }
+    final unfound = s.puzzle.goalWords.where((w) => !s.foundGoals.contains(w)).length;
+    if (unfound == 0) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: AppColors.bgBottom,
+        title: const Text('Reveal a word?',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+        content: const Text(
+          'You can fully reveal one goal word per puzzle. No score is awarded for the revealed word.',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.petal),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Reveal'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final word = await s.revealWord();
+    if (!mounted) return;
+    if (word != null) {
+      if (AppScope.of(context).settings.hapticsEnabled) {
+        HapticFeedback.heavyImpact();
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          duration: const Duration(seconds: 2),
+          content: Text('Revealed: ${word.toUpperCase()}'),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = _state;
@@ -320,6 +371,7 @@ class _GameScreenState extends State<GameScreen> {
                             );
                           }
                         },
+                        onReveal: () => _confirmReveal(s),
                       ),
                       StatsBar(state: s),
                       const SizedBox(height: 6),
@@ -347,16 +399,19 @@ class _Header extends StatelessWidget {
   final VoidCallback onClear;
   final VoidCallback? onNew;
   final VoidCallback onHint;
+  final VoidCallback onReveal;
   const _Header({
     required this.state,
     required this.onClear,
     required this.onHint,
+    required this.onReveal,
     this.onNew,
   });
 
   @override
   Widget build(BuildContext context) {
     final hintsLeft = GameState.maxHints - state.hintsUsed;
+    final revealsLeft = GameState.maxReveals - state.revealsUsed;
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
       child: Row(
@@ -419,6 +474,16 @@ class _Header extends StatelessWidget {
               icon: const Icon(Icons.shuffle, color: Colors.white70),
               onPressed: onNew,
             ),
+          Tooltip(
+            message: revealsLeft > 0
+                ? 'Reveal a word ($revealsLeft left)'
+                : 'Reveal already used',
+            child: IconButton(
+              icon: Icon(Icons.lock_open_rounded,
+                  color: revealsLeft > 0 ? AppColors.petal : Colors.white24),
+              onPressed: revealsLeft > 0 ? onReveal : null,
+            ),
+          ),
           IconButton(
             tooltip: 'Clear selection',
             icon: const Icon(Icons.refresh, color: Colors.white70),

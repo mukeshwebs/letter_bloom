@@ -29,6 +29,9 @@ class GameState extends ChangeNotifier {
   static const int maxHints = 3;
   String? revealedHint;
 
+  int revealsUsed = 0;
+  static const int maxReveals = 1;
+
   /// Per-word number of path tiles currently revealed by hints.
   final Map<String, int> _hintLevels = {};
   /// Tiles currently lit up by hints (golden glow on the board).
@@ -215,6 +218,52 @@ class GameState extends ChangeNotifier {
   }
 
   bool isHinted(Hex h) => hintedTiles.contains(h);
+
+  /// Fully reveals one unfound goal word. Limited to [maxReveals] uses per puzzle.
+  /// The revealed word is marked as found (so progression continues), its tiles
+  /// bloom on the board, but no score is awarded and combo is reset to keep
+  /// scoring fair. Returns the revealed word or null if unavailable.
+  Future<String?> revealWord() async {
+    if (revealsUsed >= maxReveals) return null;
+    final unfound = puzzle.goalWords.where((w) => !foundGoals.contains(w)).toList();
+    if (unfound.isEmpty) return null;
+    // Prefer the longest unfound word so the reveal feels valuable.
+    unfound.sort((a, b) => b.length.compareTo(a.length));
+    final word = unfound.first;
+    final path = puzzle.goalPaths[word];
+    revealsUsed += 1;
+    combo = 0;
+    foundGoals.add(word);
+    if (path != null && path.isNotEmpty) {
+      bloomedTiles.addAll(path);
+      hintedTiles.removeAll(path);
+    }
+    _hintLevels.remove(word);
+    selection.clear();
+    lastMessage = '🔓  Revealed: ${word.toUpperCase()}';
+    lastResult = WordResult.acceptedGoal;
+    if (!puzzle.isPractice) {
+      await storage.setFoundWords(puzzle.id, [...foundGoals, ...foundBonus]);
+      await storage.setBestScore(puzzle.id, score);
+    }
+    if (!_completionRecorded &&
+        foundGoals.length == puzzle.goalWords.length &&
+        puzzle.goalWords.isNotEmpty) {
+      _completionRecorded = true;
+      int newStreak = streak;
+      if (!puzzle.isPractice) {
+        newStreak = await storage.recordCompletion(puzzle.id);
+        streak = newStreak;
+      }
+      await appState?.onPuzzleCompleted(
+        bonusCount: foundBonus.length,
+        newStreak: newStreak,
+        isPractice: puzzle.isPractice,
+      );
+    }
+    notifyListeners();
+    return word;
+  }
 
   bool get dailyComplete =>
       puzzle.goalWords.isNotEmpty &&
