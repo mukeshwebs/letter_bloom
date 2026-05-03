@@ -1,0 +1,36 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Public, read-only dictionary + daily metadata.
+    match /dictionary/{doc=**} {
+      allow read: if true;
+      allow write: if false;        // only the seeder (admin SDK / OAuth) writes
+    }
+    match /daily/{doc} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Leaderboard: anyone can read; only the owner (anon uid) can upsert their own row.
+    match /leaderboard/{uid} {
+      allow read: if true;
+      allow create, update: if request.auth != null
+                            && request.auth.uid == uid
+                            && request.resource.data.totalScore is number
+                            && request.resource.data.totalScore >= 0
+                            && request.resource.data.totalScore < 1000000000;
+      allow delete: if false;
+    }
+
+    // Per-level scores.
+    match /levels/{level}/scores/{uid} {
+      allow read: if true;
+      allow create, update: if request.auth != null
+                            && request.auth.uid == uid
+                            && request.resource.data.score is number
+                            && request.resource.data.score >= 0;
+      allow delete: if false;
+    }
+  }
+}

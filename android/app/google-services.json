@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "230814657090",
+    "project_id": "letterbloom-727346",
+    "storage_bucket": "letterbloom-727346.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:230814657090:android:52bab507d2f0190350dbdb",
+        "android_client_info": {
+          "package_name": "com.letterbloom.letter_bloom"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBF1KncVkPrej6KeDeZDAbDlleOcwRmjQc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
