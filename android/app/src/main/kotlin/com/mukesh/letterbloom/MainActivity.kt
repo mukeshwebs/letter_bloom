@@ -1,4 +1,4 @@
-package com.letterbloom.letter_bloom
+package com.mukesh.letterbloom
 
 import io.flutter.embedding.android.FlutterActivity
 

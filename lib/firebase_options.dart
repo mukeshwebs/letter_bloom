@@ -57,7 +57,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyBF1KncVkPrej6KeDeZDAbDlleOcwRmjQc',
-    appId: '1:230814657090:android:52bab507d2f0190350dbdb',
+    appId: '1:230814657090:android:1a3dcb51e658022950dbdb',
     messagingSenderId: '230814657090',
     projectId: 'letterbloom-727346',
     storageBucket: 'letterbloom-727346.firebasestorage.app',
