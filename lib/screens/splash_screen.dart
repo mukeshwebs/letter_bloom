@@ -30,8 +30,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   void _route() {
     if (!mounted) return;
     final app = AppScope.of(context);
+    final skip = Uri.base.queryParameters['skipOnboarding'] == '1';
     Navigator.of(context).pushReplacementNamed(
-      app.storage.onboardingDone ? '/home' : '/onboarding',
+      (app.storage.onboardingDone || skip) ? '/home' : '/onboarding',
     );
   }
 
